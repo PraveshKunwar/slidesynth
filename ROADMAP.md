@@ -18,7 +18,7 @@
   - Create basic folder structure
 
 ### Afternoon Tasks (1 hour)
-- [ ] **Frontend Setup**:
+- [x] **Frontend Setup**:
   ```bash
   npm create vite@latest slidesynth-frontend -- --template react
   cd slidesynth-frontend
