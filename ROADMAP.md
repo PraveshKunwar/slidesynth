@@ -3,11 +3,13 @@
 **Goal**: Build an AI-powered PDF-to-slides generator that creates impressive resume metrics in 8 days.
 
 ## Day 1: 📐 MVP Design + Project Setup
+
 **Time**: 2-3 hours | **Focus**: Architecture & Foundation
 
 ### Morning Tasks (1.5 hours)
+
 - [x] **Define Core Flow**: PDF Upload → Text Extraction → AI Summarization → Slide Generation → Display
-- [x] **Sketch Simple UI**: 
+- [x] **Sketch Simple UI**:
   - Upload area (drag & drop)
   - Loading state
   - Slide preview grid
@@ -18,6 +20,7 @@
   - Create basic folder structure
 
 ### Afternoon Tasks (1 hour)
+
 - [x] **Frontend Setup**:
   ```bash
   npm create vite@latest slidesynth-frontend -- --template react
@@ -26,7 +29,7 @@
   npm install @radix-ui/react-dialog @radix-ui/react-progress
   npm install lucide-react
   ```
-- [ ] **Backend Setup**:
+- [x] **Backend Setup**:
   ```bash
   mkdir slidesynth-backend
   cd slidesynth-backend
@@ -36,17 +39,20 @@
   ```
 
 ### Evening Tasks (30 minutes)
-- [ ] **Basic API Endpoint**: Create `/api/health` endpoint that returns `{"status": "ok"}`
-- [ ] **Connect Frontend to Backend**: Test basic communication
+
+- [x] **Basic API Endpoint**: Create `/api/health` endpoint that returns `{"status": "ok"}`
+- [x] **Connect Frontend to Backend**: Test basic communication
 
 **✅ Day 1 Outcome**: Project scaffolding complete with working frontend-backend connection
 
 ---
 
 ## Day 2: 🧠 PDF Parsing + Text Extraction
+
 **Time**: 2 hours | **Focus**: PDF Processing Pipeline
 
 ### Morning Tasks (1.5 hours)
+
 - [ ] **Install PDF Dependencies**:
   ```bash
   pip install PyMuPDF langchain pypdf2
@@ -59,6 +65,7 @@
     - `clean_and_structure_chunks(chunks)`
 
 ### Afternoon Tasks (30 minutes)
+
 - [ ] **Test with Sample PDFs**:
   - Download 3-5 sample PDFs (research papers, lecture notes)
   - Test extraction quality
@@ -70,9 +77,11 @@
 ---
 
 ## Day 3: 🤖 AI Summarization Engine
+
 **Time**: 2-2.5 hours | **Focus**: Content-to-Slides AI Pipeline
 
 ### Morning Tasks (1.5 hours)
+
 - [ ] **Setup AI Integration**:
   ```bash
   pip install google-generativeai  # or openai for GPT-4
@@ -80,11 +89,12 @@
 - [ ] **Create AI Processor**:
   - Build `ai_summarizer.py`
   - Design prompt template:
+
     ```
     Convert this text into a presentation slide:
-    
+
     Text: {chunk}
-    
+
     Return JSON format:
     {
       "title": "Clear, engaging slide title",
@@ -93,6 +103,7 @@
     ```
 
 ### Afternoon Tasks (1 hour)
+
 - [ ] **Build Slide Generation Pipeline**:
   - Function: `generate_slides_from_chunks(chunks)`
   - Error handling for API failures
@@ -107,9 +118,11 @@
 ---
 
 ## Day 4: 💻 Frontend UI - Slide Renderer
+
 **Time**: 2 hours | **Focus**: User Interface & Experience
 
 ### Morning Tasks (1.5 hours)
+
 - [ ] **Build Upload Component**:
   - Drag & drop PDF upload
   - File validation (size, type)
@@ -120,6 +133,7 @@
   - Navigation between slides
 
 ### Afternoon Tasks (30 minutes)
+
 - [ ] **Add State Management**:
   - Loading states (uploading, processing, generating)
   - Error handling with user-friendly messages
@@ -134,9 +148,11 @@
 ---
 
 ## Day 5: 📦 Deploy & MVP Polish
+
 **Time**: 2 hours | **Focus**: End-to-End Working Product
 
 ### Morning Tasks (1 hour)
+
 - [ ] **Deploy Frontend**:
   - Build production version: `npm run build`
   - Deploy to Vercel: `vercel --prod`
@@ -147,9 +163,10 @@
   - Update CORS settings for production
 
 ### Afternoon Tasks (1 hour)
+
 - [ ] **End-to-End Testing**:
   - Upload PDF → Generate slides → Display results
-  - Test error cases (invalid files, API failures)  
+  - Test error cases (invalid files, API failures)
   - Performance testing with various PDF sizes
 - [ ] **UI Polish**:
   - Loading animations
@@ -161,19 +178,22 @@
 ---
 
 ## Day 6: ✅ Accuracy Testing & Validation
+
 **Time**: 2 hours | **Focus**: Metrics Collection
 
 ### Morning Tasks (1 hour)
+
 - [ ] **Manual Validation Setup**:
   - Select 5 diverse PDFs (academic, technical, business)
   - Create "gold standard" slides manually (5 slides each)
   - Build scoring rubric (1-5 scale):
     - Content coverage
-    - Logical structure  
+    - Logical structure
     - Clarity of bullet points
     - Title relevance
 
 ### Afternoon Tasks (1 hour)
+
 - [ ] **User Testing**:
   - Create Google Form for feedback collection
   - Recruit 3-5 peers for testing
@@ -191,9 +211,11 @@
 ---
 
 ## Day 7: 📊 Analytics & Export Features
+
 **Time**: 1.5-2 hours | **Focus**: Professional Features
 
 ### Morning Tasks (1 hour)
+
 - [ ] **Add Logging System**:
   - Track: slides generated, processing time, file sizes
   - Log user interactions
@@ -204,6 +226,7 @@
   - Optional: PowerPoint export
 
 ### Afternoon Tasks (1 hour)
+
 - [ ] **Analytics Dashboard** (Simple):
   - Display generation statistics
   - Show processing metrics
@@ -214,9 +237,11 @@
 ---
 
 ## Day 8: 📝 Portfolio Polish & Launch
+
 **Time**: 1.5 hours | **Focus**: Professional Presentation
 
 ### Morning Tasks (1 hour)
+
 - [ ] **Create Demo Materials**:
   - Record 30-second Loom demo
   - Take high-quality screenshots
@@ -228,6 +253,7 @@
   - Technology stack overview
 
 ### Afternoon Tasks (30 minutes)
+
 - [ ] **Resume Integration**:
   - Craft compelling bullet point with metrics
   - Add to LinkedIn projects
@@ -251,14 +277,14 @@ Based on this roadmap, you'll be able to claim:
 
 ## 🔧 Technology Stack
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| Frontend | React + Vite + Tailwind | Modern, responsive UI |
-| Backend | Flask + Python | API server & PDF processing |
-| AI | Google Gemini Pro / GPT-4 | Content summarization |
-| PDF Processing | PyMuPDF + LangChain | Text extraction & chunking |
-| Deployment | Vercel + Render | Production hosting |
-| Storage | Local file handling | MVP simplicity |
+| Component      | Technology                | Purpose                     |
+| -------------- | ------------------------- | --------------------------- |
+| Frontend       | React + Vite + Tailwind   | Modern, responsive UI       |
+| Backend        | Flask + Python            | API server & PDF processing |
+| AI             | Google Gemini Pro / GPT-4 | Content summarization       |
+| PDF Processing | PyMuPDF + LangChain       | Text extraction & chunking  |
+| Deployment     | Vercel + Render           | Production hosting          |
+| Storage        | Local file handling       | MVP simplicity              |
 
 ## 📋 Daily Time Commitment
 
