@@ -9,13 +9,15 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "backend": "cd backend && flask run",
-    "dev:full": "concurrently \"npm run backend\" \"npm run dev\""
+    "dev:full": "concurrently \"npm run backend\" \"npm run dev\"",
+    "dev:watch": "nodemon --watch src --watch public --ext ts,tsx,js,py,css,html --exec \"npm run dev:full\""
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-progress": "^1.1.7",
     "@tailwindcss/typography": "^0.5.16",
     "lucide-react": "^0.536.0",
+    "nodemon": "^3.1.10",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.11"

@@ -70,7 +70,7 @@
   - Download 3-5 sample PDFs (research papers, lecture notes)
   - Test extraction quality
   - Log chunk sizes and structure
-- [ ] **Create Upload Endpoint**: `/api/upload-pdf` that accepts files and returns extracted chunks
+- [x] **Create Upload Endpoint**: `/api/upload-pdf` that accepts files and returns extracted chunks
 
 **✅ Day 2 Outcome**: Successfully extract and chunk text from any PDF with clean structure
 
