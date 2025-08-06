@@ -66,7 +66,7 @@
 
 ### Afternoon Tasks (30 minutes)
 
-- [ ] **Test with Sample PDFs**:
+- [x] **Test with Sample PDFs**:
   - Download 3-5 sample PDFs (research papers, lecture notes)
   - Test extraction quality
   - Log chunk sizes and structure

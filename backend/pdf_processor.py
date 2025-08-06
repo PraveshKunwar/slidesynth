@@ -5,7 +5,7 @@ import re
 
 class Util:
     def is_meaningful_content(self, chunk: str) -> bool:
-            clean = re.sub(r'[\w]', '', chunk)
+            clean = re.sub(r'[^\w]', '', chunk)
             # skip if mostly numbers
             if sum(c.isdigit() for c in clean) / len(clean) > 0.7:
                 return False
@@ -31,24 +31,93 @@ class Util:
                 if re.match(pattern, chunk.strip()):
                     return False
             # must have at least 3 words for meaningful content
-            meaningful_words = [word for word in words if len(words) > 2]
+            meaningful_words = [word for word in words if len(word) > 2]
             if len(meaningful_words) < 3:
                 return False
             return True
-    def fix_artifacts(self):
-        pass
-    def normalize_academic_language(self):
-        pass
-    def remove_citations(self):
-        pass
-    def detect_topic_type(self):
-        pass
-    def determine_slide_type(self):
-        pass
-    def calculate_complexity_score(self):
-        pass
-    def generate_ai_context_hint(self):
-        pass
+    def fix_artifacts(self, text: str) -> str:
+        text = re.sub(r'(\w)-\s+(\w)', r'\1\2', text)  # Fix hyphenated words split across lines
+        text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single space
+        text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)  # Add space between camelCase
+        text = text.strip()
+        return text
+    def normalize_academic_language(self, text: str) -> str:
+        replacements = {
+        'aforementioned': 'previous',
+        'thus': 'therefore',
+        'hence': 'so',
+        'whilst': 'while',
+        'utilise': 'use',
+        'demonstrate': 'show',
+        'elucidate': 'explain',
+        'commence': 'begin',
+        'terminate': 'end'
+        }
+        for formal, casual in replacements.items():
+            text = re.sub(rf'\b{formal}\b', casual, text, flags=re.IGNORECASE)
+        return text
+    def remove_citations(self, text: str) -> str:
+        # Remove excessive citation patterns but keep some context
+        text = re.sub(r'\([^)]*\d{4}[^)]*\)', '', text)  # Remove (Author, 2020) style citations
+        text = re.sub(r'\[\d+\]', '', text)  # Remove [1] style citations
+        text = re.sub(r'\(see [^)]+\)', '', text)  # Remove (see Appendix A) references
+        text = re.sub(r'\s+', ' ', text)  # Clean up extra spaces left by removals
+        return text.strip()
+    def detect_topic_type(self, text: str) -> str:
+        text_lower = text.lower()
+        if any(word in text_lower for word in ['method', 'approach', 'procedure', 'design']):
+            return 'methodology'
+        elif any(word in text_lower for word in ['result', 'finding', 'data', 'table', 'figure']):
+            return 'results'
+        elif any(word in text_lower for word in ['conclusion', 'summary', 'implication', 'future']):
+            return 'conclusion'
+        elif any(word in text_lower for word in ['introduction', 'background', 'overview', 'problem']):
+            return 'introduction'
+        elif any(word in text_lower for word in ['literature', 'previous', 'prior', 'research']):
+            return 'literature_review'
+        else:
+            return 'general'
+    def determine_slide_type(self, text: str, position: int, total_chunks: int) -> str:
+        if position == 0:
+            return 'title'
+        elif position < total_chunks * 0.3:
+            return 'introduction'
+        elif position > total_chunks * 0.8:
+            return 'conclusion'
+        else:
+            text_lower = text.lower()
+            if any(word in text_lower for word in ['table', 'figure', 'data', 'result']):
+                return 'data'
+            elif any(word in text_lower for word in ['method', 'procedure', 'approach']):
+                return 'methodology'
+            else:
+                return 'content'
+    def calculate_complexity_score(self, text: str) -> str:
+        words = text.split()
+        avg_word_length = sum(len(word) for word in words) / len(words) if words else 0
+        # Count technical indicators
+        technical_indicators = len(re.findall(r'\b\d+%\b', text))  # Percentages
+        technical_indicators += len(re.findall(r'\bp\s*<\s*0\.\d+', text))  # P-values
+        technical_indicators += len(re.findall(r'\b[A-Z]{2,}\b', text))  # Acronyms
+        if avg_word_length > 6 or technical_indicators > 3:
+            return 'high'
+        elif avg_word_length > 4 or technical_indicators > 1:
+            return 'medium'
+        else:
+            return 'low'
+    def generate_ai_context_hint(self, slide_type: str, topic: str) -> str:
+        context_map = {
+        'title': 'Create a title slide with main topic and key themes',
+        'introduction': 'Create an introduction slide with background context',
+        'methodology': 'Create a methodology slide explaining approach and methods',
+        'results': 'Create a results slide with key findings and data points',
+        'data': 'Create a data presentation slide with clear statistics',
+        'conclusion': 'Create a conclusion slide summarizing main points',
+        'content': 'Create a content slide with main ideas and supporting points'
+        }
+        
+        base_context = context_map.get(slide_type, 'Create a slide with main ideas')
+        return f"{base_context}. Topic focus: {topic}"
 class PDFProcessor:
 # 1. Open the uploaded PDF file using a library like PyMuPDF
 
@@ -80,7 +149,7 @@ class PDFProcessor:
        total_content = '\n\n'.join([doc.page_content for doc in docs])
        return total_content
            
-    def chunk_text(self, text: str):
+    def chunk_text(self, text: str) -> list[str]:
         # split paragraphs
         paragraphs = [paragraph for paragraph in text.split('\n\n')]
         # clean paragraphs
@@ -123,19 +192,39 @@ class PDFProcessor:
             if self.util.is_meaningful_content(chunk):
                 final_chunks.append(chunk)
         return final_chunks
-    def clean_and_structure_chunks(self, chunks):
-        return "test"
+    def clean_and_structure_chunks(self, chunks: list[str]) -> list[str]:
+        structured_chunks = []
+        for idx, chunk in enumerate(chunks):
+            cleaned = self.util.fix_artifacts(chunk)
+            cleaned = self.util.normalize_academic_language(cleaned)
+            cleaned = self.util.remove_citations(cleaned)
+
+            estimated_topic = self.util.detect_topic_type(cleaned)
+            slide_type = self.util.determine_slide_type(cleaned, idx, len(chunks))
+            complexity = self.util.calculate_complexity_score(cleaned)
+
+            structured_chunk = {
+                "text": cleaned,
+                "estimated_topic": estimated_topic,
+                "slide_type": slide_type,
+                "length": len(cleaned),
+                "complexity": complexity,
+                "ai_context": self.util.generate_ai_context_hint(slide_type, estimated_topic)
+            }
+            structured_chunks.append(structured_chunk)
+        return structured_chunks
 
 a = PDFProcessor()
 # Build absolute path to the PDF file
 base_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.normpath(
-    os.path.join(base_dir, '..', 'public', 'documents', 'test_1.pdf')
+    os.path.join(base_dir, '..', 'public', 'documents', 'test_3.pdf')
 )
 if os.path.exists(file_path):
     b = a.extract_text_from_doc(file_path)
     c = a.chunk_text(b)
-    print(c)
+    d = a.clean_and_structure_chunks(c)
+    pprint.pprint(d)
 else:
     print(f"File not found: {file_path}")
     print(f"Current working directory: {os.getcwd()}")
