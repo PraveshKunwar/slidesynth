@@ -53,12 +53,12 @@
 
 ### Morning Tasks (1.5 hours)
 
-- [ ] **Install PDF Dependencies**:
+- [x] **Install PDF Dependencies**:
   ```bash
   pip install PyMuPDF langchain pypdf2
   pip install python-multipart  # for file uploads
   ```
-- [ ] **Create PDF Parser**:
+- [x] **Create PDF Parser**:
   - Build `pdf_processor.py` with functions:
     - `extract_text_from_pdf(file_path)`
     - `chunk_text_by_paragraphs(text)`
@@ -87,6 +87,7 @@
   pip install google-generativeai  # or openai for GPT-4
   ```
 - [ ] **Create AI Processor**:
+
   - Build `ai_summarizer.py`
   - Design prompt template:
 
