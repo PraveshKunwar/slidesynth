@@ -8,6 +8,7 @@ import os
 from flask import request
 from werkzeug.utils import secure_filename
 from pdf_processor import PDFProcessor
+from ai_summarizer import Summarizer
 
 # Configure upload folder and allowed extensions
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
@@ -16,14 +17,6 @@ ALLOWED_EXTENSIONS = {'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/')
-def get_home():
-    return "bro you're home right now"
-
-@app.route('/api/health')
-def get_data():
-    return jsonify({"rest": "health data bro"})
 
 @app.route('/api/upload-pdf', methods=['POST'])
 def upload_pdf():
@@ -40,19 +33,21 @@ def upload_pdf():
         # Process the PDF
         try:
             processor = PDFProcessor()
+            summarizer = Summarizer()
             raw = processor.extract_text_from_doc(save_path)
             chunks = processor.chunk_text(raw)
             structured_chunks = processor.clean_and_structure_chunks(chunks)
+            slides = summarizer.generate_slides(structured_chunks)
         except Exception as e:
             os.remove(save_path)
             return jsonify({'error': f'Processing failed: {str(e)}'}), 500
-        # Return the extracted chunks
         os.remove(save_path)
         return jsonify({
             'success': True,
             'filename': filename,
             'total_chunks': len(structured_chunks),
-            'chunks': structured_chunks
+            'total_slides': len(slides),
+            'slides': slides
         })
     return jsonify({'error': 'Invalid file'}), 400
 

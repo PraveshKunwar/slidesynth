@@ -82,7 +82,7 @@
 
 ### Morning Tasks (1.5 hours)
 
-- [ ] **Setup AI Integration**:
+- [x] **Setup AI Integration**:
   ```bash
   pip install google-generativeai  # or openai for GPT-4
   ```
