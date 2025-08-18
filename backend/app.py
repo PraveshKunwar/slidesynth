@@ -18,6 +18,10 @@ ALLOWED_EXTENSIONS = {'pdf'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/api/health')
+def health():
+    return jsonify({"status": 200})
+
 @app.route('/api/upload-pdf', methods=['POST'])
 def upload_pdf():
     # Ensure a file part is present
@@ -37,7 +41,38 @@ def upload_pdf():
             raw = processor.extract_text_from_doc(save_path)
             chunks = processor.chunk_text(raw)
             structured_chunks = processor.clean_and_structure_chunks(chunks)
+            
+            print(f"\n=== CHUNK ANALYSIS ===")
+            print(f"Raw text length: {len(raw)} characters")
+            print(f"Initial chunks: {len(chunks)}")
+            print(f"Structured chunks: {len(structured_chunks)}")
+            
+            if structured_chunks:
+                print(f"\nFirst chunk sample:")
+                first_chunk = structured_chunks[0]
+                for key, value in first_chunk.items():
+                    if isinstance(value, str) and len(value) > 100:
+                        print(f"  {key}: {value[:100]}...")
+                    else:
+                        print(f"  {key}: {value}")
+            
             slides = summarizer.generate_slides(structured_chunks)
+            
+            print(f"\n=== PDF PROCESSING RESULTS ===")
+            print(f"Filename: {filename}")
+            print(f"Total chunks: {len(structured_chunks)}")
+            print(f"Total slides generated: {len(slides)}")
+            print(f"\n=== FIRST 3 SLIDES ===")
+            for i, slide in enumerate(slides[:3]):
+                print(f"Slide {i+1}:")
+                print(f"  Title: {slide.get('title', 'N/A')}")
+                print(f"  Bullets: {slide.get('bullets', [])}")
+                print()
+            
+            if len(slides) > 3:
+                print(f"... and {len(slides) - 3} more slides")
+            print("=" * 50)
+            
         except Exception as e:
             os.remove(save_path)
             return jsonify({'error': f'Processing failed: {str(e)}'}), 500

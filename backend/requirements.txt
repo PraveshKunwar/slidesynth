@@ -30,6 +30,7 @@ httpx-sse==0.4.1
 idna==3.10
 itsdangerous==2.2.0
 Jinja2==3.1.6
+joblib==1.5.1
 jsonpatch==1.33
 jsonpointer==3.0.0
 langchain==0.3.27
@@ -41,6 +42,7 @@ MarkupSafe==3.0.2
 marshmallow==3.26.1
 multidict==6.6.3
 mypy_extensions==1.1.0
+nltk==3.9.1
 numpy==2.3.2
 orjson==3.11.1
 packaging==25.0
@@ -58,6 +60,7 @@ PyPDF2==3.0.1
 python-dotenv==1.1.1
 python-multipart==0.0.20
 PyYAML==6.0.2
+regex==2025.7.34
 requests==2.32.4
 requests-toolbelt==1.0.0
 rsa==4.9.1
