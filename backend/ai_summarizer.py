@@ -20,9 +20,20 @@ class Summarizer:
         self.TEMPERATURE = 0.7
         self.MAX_TOKENS = 300
 
-    def generate_slides(self, structured_chunks: list) -> list:
+    def generate_slides(self, structured_chunks: list, page_count: int = 0) -> list:
         slides = []
-        max_chunks = 25
+        
+        if page_count > 0:
+            target_slides = self._calculate_target_slides(page_count)
+            max_chunks = min(len(structured_chunks), target_slides)
+            print(f"\n📊 ADAPTIVE SLIDE COUNT:")
+            print(f"  PDF Pages: {page_count}")
+            print(f"  Target Slides: {target_slides}")
+            print(f"  Available Chunks: {len(structured_chunks)}")
+            print(f"  Processing Chunks: {max_chunks}")
+        else:
+            max_chunks = min(len(structured_chunks), 30)
+            print(f"\n⚠️  No page count provided, using default limit: {max_chunks}")
         
         if len(structured_chunks) > max_chunks:
             print(f"\n⚠️  WARNING: Too many chunks ({len(structured_chunks)}). Limiting to first {max_chunks} chunks.")
@@ -50,48 +61,136 @@ class Summarizer:
         
         print(f"\n=== FINAL RESULT ===")
         print(f"Total slides generated: {len(slides)}")
+        print(f"Slide-to-page ratio: {len(slides)}/{page_count} = {len(slides)/page_count:.2f} slides per page")
         print("=" * 50)
         
         return slides
-    def create_prompt_for_chunk(self, chunk_data: dict) -> str:
-        text = chunk_data["text"]
-        slide_type = chunk_data["slide_type"] 
-        topic = chunk_data["estimated_topic"]
-        ai_context = chunk_data["ai_context"]
-
-        base_prompt = "Convert this text into a presentation slide."
-        if slide_type == "title":
-            instructions = "Create a compelling title slide with main topic and key themes."
-        elif slide_type == "methodology":
-            instructions = "Focus on methods, approaches, and procedures. Make it clear and actionable."
-        elif slide_type == "results":
-            instructions = "Highlight key findings, data points, and important statistics."
+    
+    def _calculate_target_slides(self, page_count: int) -> int:
+        if page_count <= 0:
+            return 10
+        
+        if page_count <= 10:
+            return max(5, page_count // 2)
+        elif page_count <= 30:
+            return page_count // 3
+        elif page_count <= 100:
+            return page_count // 4
         else:
-            instructions = ai_context
+            return min(50, page_count // 5)
+    def create_prompt_for_chunk(self, chunk_data: dict) -> str:
+        """Creates a tailored prompt based on chunk content and metadata"""
+        
+        chunk_text = chunk_data.get('text', '')
+        slide_type = chunk_data.get('slide_type', 'content')
+        estimated_topic = chunk_data.get('estimated_topic', 'general')
+        
+        # Extract key themes and concepts from the text
+        key_concepts = self._extract_key_concepts(chunk_text)
+        
+        # Create context-aware instructions
+        slide_instructions = self._get_slide_type_instructions(slide_type)
+        
+        prompt = f"""You are an expert presentation designer. Create a professional slide from the following content.
 
-        format_rules = """
-        Return ONLY JSON format:
-        {
-        "title": "Clear, engaging slide title (5-10 words)",
-        "bullets": ["Key point 1", "Key point 2", "Key point 3", "Key point 4"]
+CONTENT TO PROCESS:
+{chunk_text}
+
+SLIDE TYPE: {slide_type}
+TOPIC AREA: {estimated_topic}
+KEY CONCEPTS: {', '.join(key_concepts)}
+
+INSTRUCTIONS:
+{slide_instructions}
+
+REQUIREMENTS:
+1. Create a specific, descriptive title (NOT generic like "Summary" or "Overview")
+2. Generate 3-5 clear, concise bullet points
+3. Each bullet should be one complete idea (not fragments)
+4. Focus on the most important information
+5. Use active voice when possible
+6. Ensure logical flow between bullets
+
+OUTPUT FORMAT (JSON):
+{{
+    "title": "Specific descriptive title that captures the main concept",
+    "bullets": [
+        "First key point with specific details",
+        "Second key point with specific details", 
+        "Third key point with specific details"
+    ]
+}}
+
+Generate the slide now:"""
+
+        return prompt
+
+    def _extract_key_concepts(self, text: str) -> List[str]:
+        """Extract key concepts and terms from the text"""
+        # Remove common words and extract meaningful terms
+        words = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', text)
+        
+        # Filter for likely important concepts
+        concepts = []
+        for word in words:
+            if (len(word) > 3 and 
+                word not in ['The', 'This', 'That', 'They', 'There', 'These', 'Those'] and
+                not re.match(r'^\d+$', word)):
+                concepts.append(word)
+        
+        # Return top 5 most frequent unique concepts
+        from collections import Counter
+        concept_counts = Counter(concepts)
+        return [concept for concept, _ in concept_counts.most_common(5)]
+
+    def _get_slide_type_instructions(self, slide_type: str) -> str:
+        """Get specific instructions based on slide type"""
+        
+        instructions = {
+            'title': """
+- Create an engaging title slide that introduces the main topic
+- Include the primary subject and key themes
+- Bullets should outline what will be covered or main objectives
+- Focus on setting context and expectations""",
+            
+            'introduction': """
+- Provide background context and setting
+- Explain why this topic is important
+- Include relevant historical context if applicable
+- Set up the main narrative or argument""",
+            
+            'content': """
+- Focus on the main ideas and supporting details
+- Organize information hierarchically (most to least important)
+- Include specific facts, data, or examples
+- Ensure each bullet represents a distinct concept""",
+            
+            'methodology': """
+- Explain approaches, methods, or processes
+- Break down complex procedures into clear steps
+- Include tools, techniques, or frameworks used
+- Focus on "how" rather than "what" """,
+            
+            'results': """
+- Present key findings, outcomes, or achievements
+- Include specific data, statistics, or evidence
+- Highlight the most significant results first
+- Show cause-and-effect relationships where relevant""",
+            
+            'conclusion': """
+- Summarize the main points or findings
+- Draw connections between different concepts
+- Include implications or significance
+- End with key takeaways or next steps""",
+            
+            'data': """
+- Present quantitative information clearly
+- Include specific numbers, percentages, or statistics
+- Explain what the data means or implies
+- Compare different data points if relevant"""
         }
         
-        Requirements:
-        - Title should be presentation-ready
-        - 3-5 bullet points maximum
-        - Each bullet should be concise but complete
-        - Use simple, clear language
-        """
-        full_prompt = base_prompt + "\n" + instructions + "\n" + format_rules + "\n\nText: " + text
-        
-        print(f"\n=== AI PROMPT FOR CHUNK ===")
-        print(f"Slide Type: {slide_type}")
-        print(f"Topic: {topic}")
-        print(f"Text Length: {len(text)} characters")
-        print(f"Text Preview: {text[:200]}...")
-        print("=" * 50)
-        
-        return full_prompt
+        return instructions.get(slide_type, instructions['content'])
     def call_gemini_api(self, prompt: str) -> str:
         MAX_RETRIES = 3
         RETRY_COUNT = 0
@@ -166,54 +265,111 @@ class Summarizer:
         if not isinstance(title, str) or not isinstance(bullets, list):
             return False
         
-        if len(title) < 3 or len(title) > 100:
+        # More lenient title validation
+        if len(title) < 5 or len(title) > 150:
             return False
         
-        generic_words = ["introduction", "overview", "content", "summary", "conclusion"]
-        if any(word in title.lower() for word in generic_words):
+        # Only reject very generic titles
+        overly_generic = ["title", "slide", "content", "text", "information"]
+        if title.lower().strip() in overly_generic:
             return False
         
-        if len(bullets) < 2 or len(bullets) > 6:
+        # More lenient bullet validation
+        if len(bullets) < 1 or len(bullets) > 8:
             return False
         
+        valid_bullets = 0
         for bullet in bullets:
-            if not isinstance(bullet, str) or len(bullet) < 10:
-                return False
-            
-            if sum(c.isdigit() or not c.isalnum() for c in bullet) > len(bullet) * 0.7:
-                return False
+            if isinstance(bullet, str) and len(bullet.strip()) >= 10:
+                valid_bullets += 1
         
-        if len(set(bullets)) != len(bullets):
-            return False
-        
-        return True
+        # At least 1 valid bullet is acceptable
+        return valid_bullets >= 1
 
     def generate_fallback_slide(self, chunk_data: Dict[str, Any]) -> Dict[str, Any]:
         text = chunk_data.get("text", "")
         slide_type = chunk_data.get("slide_type", "content")
-        topic = chunk_data.get("estimated_topic", "Topic")
+        estimated_topic = chunk_data.get("estimated_topic", "general")
         
-        if slide_type == "title":
-            title = f"Overview: {topic}"
-        else:
-            title = f"{topic.title()} Summary"
+        # Create more specific titles based on content analysis
+        title = self._generate_contextual_title(text, slide_type, estimated_topic)
         
-        sentences = [s.strip() for s in text.split(".") if s.strip()]
+        # Extract meaningful bullet points from text
+        bullets = self._extract_meaningful_bullets(text)
         
-        bullets = []
-        for sentence in sentences:
-            if len(bullets) < 4 and len(sentence) > 20:
-                cleaned_sentence = self._clean_text(sentence)
-                bullets.append(cleaned_sentence)
-        
-        if len(bullets) < 2:
-            bullets.append("Key information from source material")
-            bullets.append("Please refer to original document for details")
+        if len(bullets) < 1:
+            bullets = ["Key information from source material", "Please refer to original document for details"]
         
         return {
             "title": title,
-            "bullets": bullets
+            "bullets": bullets[:5]  # Limit to 5 bullets
         }
+
+    def _generate_contextual_title(self, text: str, slide_type: str, topic: str) -> str:
+        """Generate a meaningful title based on content analysis"""
+        
+        # Look for key phrases that could be titles
+        sentences = [s.strip() for s in text.split('.') if s.strip()]
+        if not sentences:
+            return f"{topic.title()} Information"
+        
+        first_sentence = sentences[0]
+        
+        # Look for proper nouns and important concepts
+        import re
+        capitalized_words = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', first_sentence)
+        
+        if capitalized_words:
+            # Use the most significant capitalized phrase
+            longest_phrase = max(capitalized_words, key=len)
+            
+            if slide_type == "title":
+                return f"{longest_phrase}: Overview"
+            elif slide_type == "conclusion":
+                return f"Key Outcomes: {longest_phrase}"
+            elif slide_type == "introduction":
+                return f"Understanding {longest_phrase}"
+            else:
+                return longest_phrase
+        
+        # Fallback to topic-based titles
+        if slide_type == "title":
+            return f"{topic.title()}: Introduction"
+        elif slide_type == "conclusion":
+            return f"{topic.title()}: Key Takeaways"
+        elif slide_type == "methodology":
+            return f"{topic.title()}: Approach and Methods"
+        elif slide_type == "results":
+            return f"{topic.title()}: Findings and Results"
+        else:
+            # Extract first meaningful phrase
+            words = first_sentence.split()[:8]
+            return ' '.join(words) if len(' '.join(words)) > 10 else f"{topic.title()} Overview"
+
+    def _extract_meaningful_bullets(self, text: str) -> List[str]:
+        """Extract meaningful bullet points from text"""
+        sentences = [s.strip() for s in text.split('.') if s.strip() and len(s.strip()) > 15]
+        
+        bullets = []
+        for sentence in sentences[:6]:  # Process up to 6 sentences
+            # Clean up the sentence
+            cleaned = sentence.strip()
+            if len(cleaned) > 20 and len(cleaned.split()) >= 4:
+                # Remove common prefixes
+                cleaned = re.sub(r'^(The|This|That|These|Those|It|There)\s+', '', cleaned)
+                bullets.append(cleaned)
+        
+        # If we don't have enough bullets, try splitting longer sentences
+        if len(bullets) < 2 and sentences:
+            for sentence in sentences[:3]:
+                if len(sentence) > 100:  # Long sentence, try to split
+                    parts = sentence.split(',')
+                    for part in parts:
+                        part = part.strip()
+                        if len(part) > 20 and len(bullets) < 5:
+                            bullets.append(part)
+        
+        return bullets
 
     def _clean_text(self, text: str) -> str:
         if not isinstance(text, str):

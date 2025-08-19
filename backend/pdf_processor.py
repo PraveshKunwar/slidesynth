@@ -80,32 +80,84 @@ class Util:
 
     def detect_topic_type(self, text: str) -> str:
         text_lower = text.lower()
-        if any(word in text_lower for word in ['method', 'approach', 'procedure', 'design']):
+        
+        # Historical content detection
+        if any(word in text_lower for word in ['war', 'treaty', 'battle', 'military', 'dictator', 'hitler', 'stalin', 'fascism', 'nazism']):
+            return 'historical_events'
+        
+        # Political content detection  
+        elif any(word in text_lower for word in ['government', 'totalitarian', 'democracy', 'political', 'power', 'control']):
+            return 'political_systems'
+            
+        # Geographic/territorial content
+        elif any(word in text_lower for word in ['europe', 'asia', 'territory', 'country', 'nation', 'japan', 'germany']):
+            return 'geography_politics'
+            
+        # Cause and effect content
+        elif any(word in text_lower for word in ['cause', 'effect', 'result', 'consequence', 'impact', 'led to', 'resulted in']):
+            return 'cause_and_effect'
+            
+        # Economic content
+        elif any(word in text_lower for word in ['economic', 'reparations', 'payment', 'treaty of versailles', 'depression']):
+            return 'economic_factors'
+            
+        # Biographical/people content
+        elif any(word in text_lower for word in ['benito', 'mussolini', 'churchill', 'chamberlain', 'hideki tojo']):
+            return 'historical_figures'
+            
+        # Methodological content
+        elif any(word in text_lower for word in ['method', 'approach', 'procedure', 'design']):
             return 'methodology'
-        elif any(word in text_lower for word in ['result', 'finding', 'data', 'table', 'figure']):
+            
+        # Results/data content
+        elif any(word in text_lower for word in ['result', 'finding', 'data', 'table', 'figure', 'statistics']):
             return 'results'
-        elif any(word in text_lower for word in ['conclusion', 'summary', 'implication', 'future']):
+            
+        # Conclusion content
+        elif any(word in text_lower for word in ['conclusion', 'summary', 'implication', 'future', 'takeaway']):
             return 'conclusion'
-        elif any(word in text_lower for word in ['introduction', 'background', 'overview', 'problem']):
+            
+        # Introduction content  
+        elif any(word in text_lower for word in ['introduction', 'background', 'overview', 'problem', 'context']):
             return 'introduction'
-        elif any(word in text_lower for word in ['literature', 'previous', 'prior', 'research']):
-            return 'literature_review'
+            
         else:
-            return 'general'
+            return 'general_content'
 
     def determine_slide_type(self, text: str, position: int, total_chunks: int) -> str:
-        if position == 0:
+        text_lower = text.lower()
+        
+        # Check for specific content indicators first
+        if any(phrase in text_lower for phrase in ['the big idea', 'key terms', 'main concept', 'overview']):
             return 'title'
-        elif position < total_chunks * 0.3:
+        elif any(phrase in text_lower for phrase in ['reading check', 'summarize', 'analyze causes', 'what factors']):
+            return 'analysis'
+        elif any(phrase in text_lower for phrase in ['background', 'context', 'roots in', 'centuries-old']):
+            return 'background'
+        elif any(phrase in text_lower for phrase in ['militarists gain control', 'rise of', 'political control']):
+            return 'historical_development'
+        elif any(phrase in text_lower for phrase in ['treaty of versailles', 'failures of', 'dissatisfied']):
+            return 'causes'
+        elif any(phrase in text_lower for phrase in ['martha gellhorn', 'one american', 'personal account']):
+            return 'personal_story'
+        
+        # Position-based typing as fallback
+        elif position == 0:
+            return 'title'
+        elif position < total_chunks * 0.25:
             return 'introduction'
-        elif position > total_chunks * 0.8:
+        elif position > total_chunks * 0.75:
             return 'conclusion'
         else:
-            text_lower = text.lower()
-            if any(word in text_lower for word in ['table', 'figure', 'data', 'result']):
+            # Content-based typing for middle sections
+            if any(word in text_lower for word in ['table', 'figure', 'data', 'result', 'statistics']):
                 return 'data'
-            elif any(word in text_lower for word in ['method', 'procedure', 'approach']):
+            elif any(word in text_lower for word in ['method', 'procedure', 'approach', 'how', 'process']):
                 return 'methodology'
+            elif any(word in text_lower for word in ['cause', 'reason', 'factor', 'led to', 'resulted in']):
+                return 'causes'
+            elif any(word in text_lower for word in ['effect', 'consequence', 'impact', 'outcome']):
+                return 'effects'
             else:
                 return 'content'
 
@@ -126,17 +178,34 @@ class Util:
 
     def generate_ai_context_hint(self, slide_type: str, topic: str) -> str:
         context_map = {
-            'title': 'Create a title slide with main topic and key themes',
-            'introduction': 'Create an introduction slide with background context',
-            'methodology': 'Create a methodology slide explaining approach and methods',
+            'title': 'Create an engaging title slide that introduces the main topic with clear objectives',
+            'introduction': 'Create an introduction slide providing essential background and context',
+            'background': 'Create a background slide explaining historical context and foundational information',
+            'historical_development': 'Create a slide showing the progression and development of historical events',
+            'causes': 'Create a slide explaining the causes, factors, and reasons that led to events',
+            'effects': 'Create a slide detailing the consequences, impacts, and outcomes',
+            'analysis': 'Create an analytical slide that examines and evaluates key aspects',
+            'personal_story': 'Create a slide featuring personal accounts and human perspectives',
+            'methodology': 'Create a methodology slide explaining approach and methods used',
             'results': 'Create a results slide with key findings and data points',
-            'data': 'Create a data presentation slide with clear statistics',
-            'conclusion': 'Create a conclusion slide summarizing main points',
-            'content': 'Create a content slide with main ideas and supporting points'
+            'data': 'Create a data presentation slide with clear statistics and evidence',
+            'conclusion': 'Create a conclusion slide summarizing main points and takeaways',
+            'content': 'Create a content slide with main ideas and supporting details'
         }
         
-        base_context = context_map.get(slide_type, 'Create a slide with main ideas')
-        return f"{base_context}. Topic focus: {topic}"
+        base_context = context_map.get(slide_type, 'Create a slide with main ideas and supporting points')
+        
+        # Add topic-specific guidance
+        if 'historical' in topic.lower() or 'war' in topic.lower():
+            topic_guidance = "Focus on historical events, key figures, dates, and cause-effect relationships"
+        elif 'political' in topic.lower():
+            topic_guidance = "Focus on political systems, government structures, and power dynamics"
+        elif 'economic' in topic.lower():
+            topic_guidance = "Focus on economic factors, financial impacts, and monetary consequences"
+        else:
+            topic_guidance = f"Focus on {topic} with specific details and examples"
+            
+        return f"{base_context}. {topic_guidance}."
 
 class PDFProcessor:
     def __init__(self):
@@ -149,6 +218,17 @@ class PDFProcessor:
         docs = loader.load()
         total_content = '\n\n'.join([doc.page_content for doc in docs])
         return total_content
+    
+    def get_page_count(self, path: str) -> int:
+        import fitz
+        try:
+            doc = fitz.open(path)
+            page_count = len(doc)
+            doc.close()
+            return page_count
+        except Exception as e:
+            print(f"Warning: Could not determine page count: {e}")
+            return 0
 
     def smart_split_paragraphs(self, text: str) -> List[str]:
         paragraphs = []
@@ -277,7 +357,60 @@ class PDFProcessor:
             }
             structured_chunks.append(structured_chunk)
         
-        return structured_chunks
+        merged_chunks = self._merge_small_chunks(structured_chunks)
+        print(f"\n=== CHUNK MERGING ===")
+        print(f"Before merging: {len(structured_chunks)} chunks")
+        print(f"After merging: {len(merged_chunks)} chunks")
+        
+        return merged_chunks
+    
+    def _merge_small_chunks(self, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        if len(chunks) <= 1:
+            return chunks
+        
+        merged = []
+        current_chunk = chunks[0].copy()
+        
+        for next_chunk in chunks[1:]:
+            combined_length = len(current_chunk["text"]) + len(next_chunk["text"])
+            
+            if combined_length <= self.max_chunk_size:
+                current_chunk["text"] += " " + next_chunk["text"]
+                current_chunk["length"] = len(current_chunk["text"])
+                current_chunk["estimated_topic"] = self._merge_topics(
+                    current_chunk["estimated_topic"], 
+                    next_chunk["estimated_topic"]
+                )
+                current_chunk["slide_type"] = self._determine_merged_slide_type(
+                    current_chunk["slide_type"], 
+                    next_chunk["slide_type"]
+                )
+            else:
+                merged.append(current_chunk)
+                current_chunk = next_chunk.copy()
+        
+        merged.append(current_chunk)
+        return merged
+    
+    def _merge_topics(self, topic1: str, topic2: str) -> str:
+        if topic1 == topic2:
+            return topic1
+        elif topic1 == "general" and topic2 != "general":
+            return topic2
+        elif topic2 == "general" and topic1 != "general":
+            return topic1
+        else:
+            return "general"
+    
+    def _determine_merged_slide_type(self, type1: str, type2: str) -> str:
+        if type1 == type2:
+            return type1
+        elif type1 == "title" or type2 == "title":
+            return "introduction"
+        elif type1 == "conclusion" or type2 == "conclusion":
+            return "content"
+        else:
+            return "content"
 
 if __name__ == "__main__":
     processor = PDFProcessor()
